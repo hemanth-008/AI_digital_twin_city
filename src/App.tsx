@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import Map3D from './components/Map3D';
 import ControlPanel from './components/ControlPanel';
 import InsightsPanel from './components/InsightsPanel';
+import CityIntelligence from './components/CityIntelligence';
+import AICopilot from './components/AICopilot';
 import { SimulationParameters, SimulationResults } from './types';
-import { cities } from './data/cities';
+import { globalCities, CityProfile } from './data/globalCities';
 import { runSimulation, generateAIInsights, generateRecommendations } from './utils/simulationEngine';
-import { Layers, Layers3 } from 'lucide-react';
+import { Layers, Layers3, MessageCircle } from 'lucide-react';
 
 const defaultParameters: SimulationParameters = {
   city: 'Mumbai',
@@ -29,8 +31,9 @@ function App() {
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationActive, setSimulationActive] = useState(false);
   const [mapStyle, setMapStyle] = useState<'2d' | '3d'>('3d');
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
 
-  const selectedCity = cities.find((c) => c.name === parameters.city) || cities[0];
+  const selectedCity = (globalCities.find((c) => c.name === parameters.city) || globalCities[0]) as CityProfile;
 
   const handleParameterChange = (updates: Partial<SimulationParameters>) => {
     setParameters((prev) => ({ ...prev, ...updates }));
@@ -102,15 +105,20 @@ function App() {
       </header>
 
       <div className="flex-1 flex overflow-hidden">
-        <div className="w-80 flex-shrink-0 border-r border-gray-800">
-          <ControlPanel
-            cities={cities}
-            parameters={parameters}
-            onParameterChange={handleParameterChange}
-            onRunSimulation={handleRunSimulation}
-            onReset={handleReset}
-            isRunning={isSimulating}
-          />
+        <div className="w-80 flex-shrink-0 border-r border-gray-800 flex flex-col">
+          <div className="flex-1 overflow-y-auto">
+            <ControlPanel
+              cities={globalCities}
+              parameters={parameters}
+              onParameterChange={handleParameterChange}
+              onRunSimulation={handleRunSimulation}
+              onReset={handleReset}
+              isRunning={isSimulating}
+            />
+          </div>
+          <div className="border-t border-gray-800 p-4">
+            <CityIntelligence city={selectedCity} />
+          </div>
         </div>
 
         <div className="flex-1 relative">
@@ -144,15 +152,32 @@ function App() {
           )}
         </div>
 
-        <div className="w-96 flex-shrink-0 border-l border-gray-800">
-          <InsightsPanel
-            results={results}
-            insights={insights}
-            recommendations={recommendations}
-            isSimulating={isSimulating}
-          />
+        <div className="w-96 flex-shrink-0 border-l border-gray-800 flex flex-col">
+          <div className="flex-1 overflow-y-auto">
+            <InsightsPanel
+              results={results}
+              insights={insights}
+              recommendations={recommendations}
+              isSimulating={isSimulating}
+            />
+          </div>
+          <button
+            onClick={() => setIsCopilotOpen(!isCopilotOpen)}
+            className="border-t border-gray-800 p-4 bg-gradient-to-r from-blue-900/20 to-cyan-900/20 hover:from-blue-900/40 hover:to-cyan-900/40 transition-all duration-200 flex items-center justify-center gap-2 text-blue-400 font-semibold"
+          >
+            <MessageCircle className="w-5 h-5" />
+            AI Copilot
+          </button>
         </div>
       </div>
+
+      <AICopilot
+        city={selectedCity}
+        results={results}
+        parameters={parameters}
+        isOpen={isCopilotOpen}
+        onClose={() => setIsCopilotOpen(false)}
+      />
     </div>
   );
 }
